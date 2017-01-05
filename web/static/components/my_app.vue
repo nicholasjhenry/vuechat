@@ -7,20 +7,28 @@
       <button v-on:click="connectToChat">Next</button>
     </div>
     <div class="messages" v-else>
-      <strong>{{username}}:</strong><br/>
+      Online users:
+      <ul v-for="user in users">
+        <li>
+          {{user.user}} ({{user.online_at}})
+        </li>
+      </ul>
       <ul v-for="message in messages">
         <li>
           <small>{{message.received_at}}</small>: <strong>{{message.username}}</strong>: {{message.body}}
         </li>
       </ul>
 
-      <input type="text" v-model="message" v-on:keyup.13="sendMessage">
+      <p>
+        <strong>{{username}}:</strong><br/>
+        <input type="text" placeholder="What do you have to say?" v-model="message" v-on:keyup.13="sendMessage">
+      </p>
     </div>
   </div>
 </template>
 
 <script>
-  import {Socket} from "phoenix"
+  import {Socket, Presence} from "phoenix"
 
   export default {
     data() {
@@ -29,6 +37,7 @@
         socket: null,
         channel: null,
         messages: [],
+        users: [],
         username: "",
         enterName: true,
       }
@@ -38,7 +47,20 @@
         this.channel.push("new_msg", { body: this.message })
         this.message = ''
       },
+      assignUsers(presences) {
+        let formatTimestamp = (timestamp) => {
+          timestamp = parseInt(timestamp)
+          let date = new Date(timestamp)
+          return date.toLocaleTimeString()
+        }
+
+        this.users = Presence.list(presences, (user, {metas: metas}) => {
+          return { user: user, online_at: formatTimestamp(metas[0].online_at) }
+        })
+      },
       connectToChat() {
+        let presences = {}
+        this.enterName = false
         this.socket = new Socket("/socket", {params: {username: this.username}}),
         this.socket.connect()
 
@@ -47,10 +69,20 @@
           payload.received_at = Date();
           this.messages.push(payload);
         });
+
         this.channel.join()
           .receive("ok", response => { console.log("Joined successfully", response) })
           .receive("error", response => { console.log("Unable to join", response) })
-        this.enterName = false;
+
+        this.channel.on("presence_state", state => {
+          presences = Presence.syncState(presences, state)
+          this.assignUsers(presences)
+        })
+
+        this.channel.on("presence_diff", diff => {
+          presences = Presence.syncDiff(presences, diff)
+          this.assignUsers(presences)
+        })
       },
     },
   }
