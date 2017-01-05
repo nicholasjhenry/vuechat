@@ -18,4 +18,18 @@ import "phoenix_html"
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-import socket from "./socket"
+// import socket from "./socket"
+
+import Vue from 'vue'
+import MyApp from "../components/my_app.vue"
+
+// Create the main component
+Vue.component('my-app', MyApp)
+
+// And create the top-level view model:
+new Vue({
+  el: '#app',
+  render(createElement) {
+    return createElement(MyApp, {})
+  }
+});
