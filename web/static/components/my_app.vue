@@ -1,28 +1,39 @@
 <template>
   <div class="my-app">
-    <h1>Vuechat</h1>
     <div class="user-details" v-if="enterName">
       <label>Please enter your name:</label><br>
       <input type="text" v-model="username">
       <button v-on:click="connectToChat">Next</button>
     </div>
-    <div class="messages" v-else>
-      Online users:
-      <ul v-for="user in users">
-        <li>
-          {{user.user}} ({{user.online_at}})
-        </li>
-      </ul>
-      <ul v-for="message in messages">
-        <li>
-          <small>{{message.received_at}}</small>: <strong>{{message.username}}</strong>: {{message.body}}
-        </li>
-      </ul>
+    <div id="main-container" v-else>
+      <div id="users-list">
+        <h3>Online</h3>
+        <ul>
+          <transition-group name="user-appear">
+            <li v-for="user in users" v-bind:key="user.user">
+              {{user.user}} ({{user.online_at}})
+            </li>
+          </transition-group>
+        </ul>
+      </div>
+      <div id="messages-list">
+        <ul>
+          <transition-group name="message-appear">
+            <li v-for="message in messages" v-bind:key="message">
+              <div class="message-metadata">
+                <span class="username">{{message.username}}</span>
+                <span class="received-at">{{message.received_at}}</span>
+              </div>
+              {{message.body}}
+            </li>
+          </transition-group>
+        </ul>
+      </div>
 
-      <p>
-        <strong>{{username}}:</strong><br/>
-        <input type="text" placeholder="What do you have to say?" v-model="message" v-on:keyup.13="sendMessage">
-      </p>
+      <div id="your-message">
+        <input type="text" placeholder="What do you have to say?"
+          v-model="message" v-on:keyup.13="sendMessage">
+      </div>
     </div>
   </div>
 </template>
@@ -90,11 +101,95 @@
 
 <style lang="sass">
   .my-app {
-    margin-left: auto;
-    margin-right: auto;
     width: 800px;
     h1 {
       text-align: center;
+    }
+
+    #main-container {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      overflow: hidden;
+    }
+
+    #your-message {
+      position: fixed;
+      bottom: 0;
+      left: 250px;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+
+      input {
+        width: 100%;
+        padding: 5px 8px;
+        border-radius: 3px;
+        outline: 0;
+        border: 1px solid #ddd;
+      }
+    }
+
+    #users-list {
+      background-color: #008bdf;
+      width: 250px;
+      overflow-y: scroll;
+      height: 100vh;
+
+      h3 {
+        font-size: 0.9em;
+        margin-left: 10px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      ul {
+        list-style: none;
+        padding-left: 20px;
+        color: rgba(255, 255, 255, 0.9);
+
+        li {
+          &.user-appear-enter-active, &.user-appear-leave-active {
+            transition: all .2s
+          }
+          &.user-appear-enter, &.user-appear-leave-active {
+            opacity: 0;
+            transform: translateX(-15px);
+          }
+        }
+      }
+    }
+
+    #messages-list {
+      padding-top: 20px;
+      padding-left: 20px;
+      float: left;
+      ul {
+        list-style: none;
+        padding: 0;
+        li {
+          padding: 5px 0;
+          .message-metadata {
+            .username {
+              font-weight: bold;
+            }
+          }
+          .received-at {
+            color: rgba(0, 0, 0, 0.4);
+            margin-left: 5px;
+            font-size: 0.9em;
+          }
+          &.message-appear-enter-active, &.message-appear-leave-active {
+            transition: all .2s
+          }
+          &.message-appear-enter, &.message-appear-leave-active {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+        }
+      }
     }
   }
 </style>
